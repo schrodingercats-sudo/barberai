@@ -28,19 +28,50 @@ export const analyzeFacialFeatures = async (imageBase64: string): Promise<string
     return response.text;
 };
 
-export const suggestHairstyle = async (facialFeatures: string): Promise<string> => {
+export const suggestHairstyles = async (facialFeatures: string): Promise<{ styleName: string; description: string; }[]> => {
     const model = 'gemini-2.5-pro';
-    const prompt = `You are an expert barber and hairstylist. Based on the following facial features: "${facialFeatures}", suggest one cohesive and stylish new hairstyle. Provide a single, detailed description of this hairstyle that can be used to generate it from multiple angles (front, back, sides).`;
+    const prompt = `You are an expert barber and hairstylist. Based on the following facial features: "${facialFeatures}", suggest four varied and distinct new hairstyles. For each hairstyle, provide a short, catchy style name (e.g., "Classic Taper Fade", "Textured Crop Top") and a detailed description that can be used to generate it from multiple angles.`;
 
     const response = await ai.models.generateContent({
         model,
         contents: prompt,
         config: {
             thinkingConfig: { thinkingBudget: 32768 },
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    hairstyles: {
+                        type: Type.ARRAY,
+                        description: 'A list of 4 hairstyle suggestions.',
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                styleName: {
+                                    type: Type.STRING,
+                                    description: 'A short, catchy name for the hairstyle.',
+                                },
+
+                                description: {
+                                    type: Type.STRING,
+                                    description: 'A detailed description of the hairstyle for image generation.',
+                                },
+                            },
+                            required: ["styleName", "description"]
+                        }
+                    }
+                },
+                required: ["hairstyles"]
+            }
         }
     });
     
-    return response.text.trim();
+    const jsonResponse = JSON.parse(response.text);
+    if (!jsonResponse.hairstyles || jsonResponse.hairstyles.length < 4) {
+        throw new Error("AI failed to suggest enough hairstyles.");
+    }
+
+    return jsonResponse.hairstyles.slice(0, 4);
 };
 
 export const describeGeneratedHairstyle = async (imageBase64: string): Promise<string> => {
