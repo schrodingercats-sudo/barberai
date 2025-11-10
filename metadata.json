@@ -1,0 +1,5 @@
+{
+  "name": "AI Hairstyle Generator",
+  "description": "Upload a photo of yourself to get personalized hairstyle recommendations. The AI analyzes your facial features and generates four views (front, back, left, right) of a new hairstyle, complete with a clean white background.",
+  "requestFramePermissions": []
+}
